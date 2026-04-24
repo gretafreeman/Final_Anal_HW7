@@ -1,0 +1,9 @@
+name: base
+dependencies:
+  - conda=26.1.1
+  - pyopenssl=25.0.0
+  - requests=2.32.4
+  - setuptools=78.1.1
+  - urllib3=2.6.3
+  - brotli=1.2.0
+prefix: /opt/conda
