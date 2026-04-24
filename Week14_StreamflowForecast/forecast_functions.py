@@ -167,3 +167,14 @@ def load_model(path='saved_model.pkl'):
         model = pickle.load(f)
     print(f"  Model loaded from {path}")
     return model
+
+def fit_monthly_avg_model(train_df):
+    """Return a dictionary of mean streamflow for each calendar month."""
+    monthly_means = train_df.groupby(train_df.index.month)['streamflow_cfs'].mean().to_dict()
+    return monthly_means
+
+def make_5day_forecast_monthly(monthly_means, forecast_date, n_days=5):
+    """Return DataFrame with monthly average flow for each forecast day."""
+    dates = pd.date_range(start=forecast_date, periods=n_days, freq='D')
+    forecasts = [monthly_means[d.month] for d in dates]
+    return pd.DataFrame({'Forecast_cfs': forecasts}, index=dates)

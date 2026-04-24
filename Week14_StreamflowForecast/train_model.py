@@ -13,11 +13,12 @@ import pandas as pd
 import hf_hydrodata
 from forecast_functions import (
     get_training_test_data,
-    fit_longterm_avg_model,
     compute_metrics,
     plot_validation,
     save_model,
     load_model,
+    fit_longterm_avg_model,
+    fit_monthly_avg_model,
 )
 
 parser = argparse.ArgumentParser()
@@ -29,7 +30,7 @@ parser.add_argument('--train-start', default='1990-01-01')
 parser.add_argument('--train-end',   default='2022-12-31')
 parser.add_argument('--test-start',  default='2023-01-01')
 parser.add_argument('--test-end',    default='2024-12-31')
-parser.add_argument('--model',       default='longterm_avg', choices=['longterm_avg'])
+parser.add_argument('--model',       default='longterm_avg', choices=['longterm_avg', 'monthly_avg'])
 parser.add_argument('--refit',       default='True')
 parser.add_argument('--validate',    default='True')
 args = parser.parse_args()
@@ -76,6 +77,55 @@ if args.model == 'longterm_avg':
         plot_validation(
             train['streamflow_cfs'], test['streamflow_cfs'],
             forecast_series, metrics, 'Long-term Average',
+            train_forecast_cfs=train_fitted
+        )
+
+elif args.model == 'monthly_avg':
+    print("\n--- Step 2: Fit monthly average model ---")
+
+    if REFIT_MODEL or not os.path.exists('saved_model.pkl'):
+        monthly_means = fit_monthly_avg_model(train)
+        print(" Monthly means:")
+        for month, flow in monthly_means.items():
+            print(f" Month {month}: {flow:.2f} cfs")
+        save_model(monthly_means)
+    else:
+        monthly_means = load_model()
+        if not isinstance(monthly_means, dict):
+            raise TypeError(
+                "saved_model.pkl does not contain a monthly_avg model. "
+                "Re-run with --refit True --model monthly_avg to train one."
+            )
+
+    if RUN_VALIDATION:
+        print("\n--- Step 3: Validate on test period ---")
+
+        train_fitted = pd.Series(
+            [monthly_means[d.month] for d in train.index],
+            index=train.index
+        )
+
+        forecast_series = pd.Series(
+            [monthly_means[d.month] for d in test.index],
+            index=test.index
+        )
+
+        metrics = compute_metrics(test['streamflow_cfs'].values, forecast_series.values)
+
+        print("\n Validation metrics:")
+        for name, val in metrics.items():
+            print(f" {name:<12}: {val:.4f}")
+
+        print("\n NSE guide: >0.75 very good | 0.65–0.75 good | "
+              "0.50–0.65 satisfactory | <0.50 poor")
+
+        print("\n Generating validation plot ...")
+        plot_validation(
+            train['streamflow_cfs'],
+            test['streamflow_cfs'],
+            forecast_series,
+            metrics,
+            'Monthly Average',
             train_forecast_cfs=train_fitted
         )
 

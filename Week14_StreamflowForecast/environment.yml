@@ -1,9 +1,14 @@
-name: base
+name: hw7_forecast
+channels:
+  - conda-forge
+  - defaults
 dependencies:
-  - conda=26.1.1
-  - pyopenssl=25.0.0
-  - requests=2.32.4
-  - setuptools=78.1.1
-  - urllib3=2.6.3
-  - brotli=1.2.0
-prefix: /opt/conda
+  - python=3.11
+  - pyyaml
+  - pandas
+  - matplotlib
+  - scikit-learn
+  - numpy
+  - pip:
+    - hf_hydrodata
+prefix: /opt/conda/envs/hw7_forecast
