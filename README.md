@@ -59,7 +59,7 @@ The workflow should be run from inside the Week14_StreamflowForecast folder.
 
 ## **Step 5: HydroFrame login information**
 
-This workflow downloads streamflow data using HydroFrame. When the workflow runs, it will ask for:
+This workflow downloads streamflow data using HydroFrame. When the workflow runs after typing './run.workflow,sh', it will ask for:
 
 ```bash
 HydroFrame email:
