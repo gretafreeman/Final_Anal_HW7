@@ -322,3 +322,18 @@ Use:
 ```bash
 bash run_workflow.sh
 ```
+
+# New Model Update
+
+## Name: Seasonal Day-of-Year Average Model
+This is the new model added for this assignment. The seasonal day-of-year model calculates an average streamflow for each day of the year using a window around that calendar day. In this workflow, the default window is plus or minus 15 days.
+
+For example, if the forecast date is April 30, the model uses historical streamflow values from approximately April 15 through May 15 across the training record. This keeps the model simple while still accounting for seasonal changes in streamflow.
+
+The model name is:
+```bash
+seasonal_doy
+```
+
+# Final AI Use Statement
+The work and troubleshooting were completed with the help of AI. I don't think I would've been able to navigate and create a model without the guidance and explanation from AI. It explained how the workflow files connect and this helped me fully understand the scope of the project.
