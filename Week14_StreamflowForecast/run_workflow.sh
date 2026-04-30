@@ -17,10 +17,18 @@ TRAIN_END="2022-12-31"
 TEST_START="2023-01-01"
 TEST_END="2024-12-31"
 
-FORECAST_DATE="2024-04-30"   # First day of the 5-day forecast (YYYY-MM-DD)
-REFIT_MODEL="True"           # True = re-fit from scratch | False = use saved_model.pkl
+FORECAST_DATE="2024-04-30"   # First day of the forecast (YYYY-MM-DD)
+FORECAST_DAYS=14             # Forecast length
+DOY_WINDOW=15                # seasonal_doy uses +/- 15 days around each day of year
+
+REFIT_MODEL="True"           # True = re-fit from scratch | False = use saved model
 RUN_VALIDATION="True"        # True = show validation plots and metrics
-MODEL="monthly_avg" # options: longterm_avg or monthly_avg       
+
+# Model choices:
+# longterm_avg = one mean for all days
+# monthly_avg  = one mean for each calendar month
+# seasonal_doy = new model using day-of-year seasonal averages
+MODEL="seasonal_doy"      
 
 # =============================================================================
 # RUN WORKFLOW — no need to edit below this line

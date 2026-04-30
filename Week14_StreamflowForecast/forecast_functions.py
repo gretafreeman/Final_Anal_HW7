@@ -86,6 +86,7 @@ def get_recent_data(gauge_id, forecast_date, ar_order):
         )
     return df
 
+#-------------------- Longterm Avg ------------------------
 
 def fit_longterm_avg_model(train_df):
     """Return the mean streamflow (cfs) over the entire training period."""
@@ -168,6 +169,7 @@ def load_model(path='saved_model.pkl'):
     print(f"  Model loaded from {path}")
     return model
 
+#-------------------- Monthly Avg ------------------------
 def fit_monthly_avg_model(train_df):
     """Return a dictionary of mean streamflow for each calendar month."""
     monthly_means = train_df.groupby(train_df.index.month)['streamflow_cfs'].mean().to_dict()
@@ -177,4 +179,102 @@ def make_5day_forecast_monthly(monthly_means, forecast_date, n_days=5):
     """Return DataFrame with monthly average flow for each forecast day."""
     dates = pd.date_range(start=forecast_date, periods=n_days, freq='D')
     forecasts = [monthly_means[d.month] for d in dates]
+    return pd.DataFrame({'Forecast_cfs': forecasts}, index=dates)
+
+# =============================================================================
+# MONTHLY AVERAGE MODEL
+# =============================================================================
+
+def fit_monthly_avg_model(train_df):
+    """
+    Return a dictionary mapping each month, 1-12, to the mean streamflow
+    for that month during the training period.
+    """
+    monthly_means = train_df.groupby(train_df.index.month)['streamflow_cfs'].mean().to_dict()
+    return monthly_means
+
+
+def make_5day_forecast_monthly(monthly_means, forecast_date, n_days=5):
+    """
+    Return a forecast where each day uses the historical average flow
+    for that calendar month.
+    """
+    dates = pd.date_range(start=forecast_date, periods=n_days, freq='D')
+    forecasts = [monthly_means[d.month] for d in dates]
+    return pd.DataFrame({'Forecast_cfs': forecasts}, index=dates)
+
+
+# =============================================================================
+# New model for Updated HW7: SEASONAL DAY-OF-YEAR (DOY) AVERAGE MODEL
+# =============================================================================
+
+def _circular_doy_distance(doy_values, target_doy, year_length=366):
+    """
+    Compute the distance between days of year while allowing wraparound
+    between December and January.
+    """
+    raw_distance = np.abs(doy_values - target_doy)
+    return np.minimum(raw_distance, year_length - raw_distance)
+
+
+def fit_seasonal_doy_model(train_df, window_days=15):
+    """
+    Fit a simple seasonal day-of-year model.
+
+    For each day of the year, this model calculates the average streamflow
+    from training dates within +/- window_days of that calendar day.
+
+    Example:
+    For April 30, the model uses historical streamflows from about
+    April 15 through May 15 across all training years.
+    """
+    train_doy = train_df.index.dayofyear.to_numpy()
+    train_flow = train_df['streamflow_cfs'].to_numpy()
+    fallback_mean = float(np.mean(train_flow))
+
+    daily_means = {}
+
+    for doy in range(1, 367):
+        distance = _circular_doy_distance(train_doy, doy)
+        in_window = distance <= window_days
+
+        if np.any(in_window):
+            daily_means[doy] = float(np.mean(train_flow[in_window]))
+        else:
+            daily_means[doy] = fallback_mean
+
+    model = {
+        'model_type': 'seasonal_doy',
+        'window_days': window_days,
+        'daily_means': daily_means,
+        'fallback_mean': fallback_mean
+    }
+
+    return model
+
+
+def predict_seasonal_doy_model(model, dates):
+    """
+    Predict streamflow for a list or index of dates using the seasonal
+    day-of-year model.
+    """
+    daily_means = model['daily_means']
+    fallback_mean = model.get('fallback_mean', np.mean(list(daily_means.values())))
+
+    predictions = []
+
+    for date in pd.to_datetime(dates):
+        doy = int(date.dayofyear)
+        predictions.append(daily_means.get(doy, fallback_mean))
+
+    return predictions
+
+
+def make_forecast_seasonal_doy(model, forecast_date, n_days=14):
+    """
+    Make a seasonal day-of-year forecast. Default length is 14 days.
+    """
+    dates = pd.date_range(start=forecast_date, periods=n_days, freq='D')
+    forecasts = predict_seasonal_doy_model(model, dates)
+
     return pd.DataFrame({'Forecast_cfs': forecasts}, index=dates)
