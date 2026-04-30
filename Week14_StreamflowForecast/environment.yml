@@ -11,4 +11,3 @@ dependencies:
   - numpy
   - pip:
     - hf_hydrodata
-prefix: /opt/conda/envs/hw7_forecast
