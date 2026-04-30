@@ -322,8 +322,3 @@ Use:
 ```bash
 bash run_workflow.sh
 ```
-<<<<<<< HEAD
-=======
-
-
->>>>>>> 1c44c90 (commit readme)
